@@ -1,0 +1,3 @@
+ps -aux
+   ctrl+Z          - move to background
+   fg %[jobnumber] - move to foreground
