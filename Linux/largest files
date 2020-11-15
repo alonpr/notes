@@ -1,0 +1,1 @@
+find [DIRECTORY / FILESYSTEM] -mount -type f -ls | sort -k 7 -r -n | head -10
