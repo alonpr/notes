@@ -1,0 +1,11 @@
+-- export to csv in sqldeveloper
+
+set feedback off
+set termout off
+spool /Users/alonp/1.txt
+
+select /*csv*/ * from ???;
+
+spool off
+
+available options: csv, xml, html, delimited, insert, loader, fixed, text
