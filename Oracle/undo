@@ -9,3 +9,18 @@ from DBA_UNDO_EXTENTS c
 where status <> 'EXPIRED'
 group by c.tablespace_name) b
 where a.tablespace_name = b.tablespace_name;
+
+-- undo status
+
+select tablespace_name tablespace, status, round(sum(bytes)/1024/1024/1024,2) size_gb 
+from dba_undo_extents 
+group by tablespace_name, status 
+order by 1,2;
+
+
+
+-- active undo per session
+
+select s.username,round((used_ublk*8192)/1024/1024/1024,2) size_gb 
+from v$transaction t, v$session s
+where t.addr=s.taddr;
