@@ -2,3 +2,11 @@ select * from DBA_DATAPUMP_JOBS;
 
 impdp/expdp  / attach=[job_name]
   > KILL_JOB
+
+grant read, write on directory DATA_PUMP_DIR to USERNAME;
+
+nohup expdp USERNAME/PASSWORD directory=DATA_PUMP_DIR schemas=SCHEMA_NAME dumpfile=FILENAME.dmp logfile=FILENAME.log metrics=YES PARALLEL=1 flashback_time=\"TO_TIMESTAMP\(\'31-12-9999 23\:59\:00\', \'DD-MM-YYYY HH24\:MI\:SS\'\)\" &
+
+nohup impdp / schemas= dumpfile= logfile= directory= remap_schema=: remap_tablespace=: &
+
+EXCLUDE=TABLE_DATA:"in ('HR','AB')"
