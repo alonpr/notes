@@ -1,0 +1,13 @@
+select NAME,
+       Round(BYTES/1024/1024) SIZE_MB 
+from   V$SGAINFO
+where  NAME in ('Maximum SGA Size','Buffer Cache Size','Shared Pool Size')
+
+select POOL,
+       NAME,
+       Round(BYTES/1024/1024) SIZE_MB 
+from   V$SGASTAT
+where  (POOL in ('shared pool')
+        or  POOL is NULL)
+  and  NAME in ('buffer_cache','free memory','sql area')
+order by 3 desc
