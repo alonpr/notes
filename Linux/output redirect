@@ -1,0 +1,4 @@
+cat FILE.txt > /dev/null             (No output)
+cat FILE.txt > OUTFILE.txt           (Output to file)
+cat FILE.txt >> OUTFILE.txt          (Output appended to file)
+set noclobber                        (Stops overwriting of files in output redirection)
