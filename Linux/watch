@@ -1,0 +1,1 @@
+watch -n 30 . r.sh   <or>   watch -n 30 "df -h | grep icsrc"
