@@ -1,0 +1,257 @@
+-- Current Load
+select 'Number of CPUs' STAT, To_Char(VALUE) 
+from   V$OSSTAT 
+where  STAT_NAME = 'NUM_CPUS'
+union all
+select 'OS Run Queue', To_Char(Round(VALUE)) 
+from   V$OSSTAT 
+where  STAT_NAME = 'LOAD'
+union all
+select 'DB Time/sec', To_Char(Round(VALUE/100)) 
+from   V$SYSMETRIC 
+where  METRIC_ID = 2123
+  and  GROUP_ID  = 3
+union all
+select 'Active Sessions', To_Char(Sum(VALUE)) 
+from  V$SYSMETRIC 
+where METRIC_ID in (2148,2149)
+union all
+select 'Connected Sessions', To_Char(Count(*))
+from   V$SESSION
+union all
+select 'Commits/sec', To_Char(Round(VALUE))
+from   V$SYSMETRIC
+where  METRIC_ID = 2022
+  and  GROUP_ID  = 2
+union all
+select 'Redo  (MB/sec)', To_Char(Round(VALUE/1024/1024))
+from   V$SYSMETRIC
+where  METRIC_ID = 2016
+  and  GROUP_ID  = 3
+union all
+select 'Write (MB/sec)', To_Char(Round(VALUE/1024/1024))
+from   V$SYSMETRIC
+where  METRIC_ID = 2124
+union all
+select 'Read  (MB/sec)', To_Char(Round(VALUE/1024/1024))
+from   V$SYSMETRIC
+where  METRIC_ID = 2093
+union all
+select 'Commit Latency     (ms)', Decode(METRIC.WAIT_COUNT, 0, 'N/A', Trunc((METRIC.TIME_WAITED*10)/METRIC.WAIT_COUNT, 2)) 
+from   V$EVENT_NAME  EVENT,
+       V$EVENTMETRIC METRIC 
+where  EVENT.NAME = 'log file sync'
+  and  EVENT.EVENT_ID = METRIC.EVENT_ID
+union all
+select 'Block Read Latency (ms)', To_Char(Round(VALUE,2))
+from   V$SYSMETRIC
+where  METRIC_ID = 2144
+  and  GROUP_ID  = 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- AWR History
+with START_SNAP as (select min(SNAP_ID) SNAP_ID from DBA_HIST_SNAPSHOT where END_INTERVAL_TIME >= SYSDATE - 4/24)
+select END_TIME,
+       METRIC_NAME,
+       AVG,
+       MAX 
+from 
+(
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '1. DB Time %'                                                                   METRIC_NAME,
+       round(AVERAGE/100/(select VALUE from V$OSSTAT where STAT_NAME='NUM_CPUS'), 2) AVG,
+       round(MAXVAL/100/(select VALUE from V$OSSTAT where STAT_NAME='NUM_CPUS'), 2)  MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2123 -- Database Time Per Sec
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '5. Redo MB/sec'                                                                 METRIC_NAME,
+       round(AVERAGE/1024/1024)                                                      AVG,
+       round(MAXVAL/1024/1024)                                                       MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2016 -- Redo Generated Per Sec
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '3. Commits/sec'                                                                 METRIC_NAME,
+       round(AVERAGE)                                                                AVG,
+       round(MAXVAL)                                                                 MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2022 -- User Commits Per Sec
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '2. CPU %'                                                                       METRIC_NAME,
+       round(AVERAGE/100, 2)                                                         AVG,
+       round(MAXVAL/100, 2)                                                          MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2057 -- Host CPU Utilization (%)
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '6. Read MB/sec'                                                                 METRIC_NAME,
+       round(AVERAGE/1024/1024)                                                      AVG,
+       round(MAXVAL/1024/1024)                                                       MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2093 -- Physical Read Total Bytes Per Sec
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '7. Write MB/sec'                                                                METRIC_NAME,
+       round(AVERAGE/1024/1024)                                                      AVG,
+       round(MAXVAL/1024/1024)                                                       MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2124 -- Physical Write Total Bytes Per Sec
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '8. Sessions'                                                                    METRIC_NAME,
+       round(AVERAGE)                                                                AVG,
+       round(MAXVAL)                                                                 MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2143 -- Session Count
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+union all
+select                                                                               DBID,
+                                                                                     INSTANCE_NUMBER,
+                                                                                     SNAP_ID,
+                                                                                     BEGIN_TIME,
+                                                                                     END_TIME,
+       '4. OS Run Queue'                                                                METRIC_NAME,
+       round(AVERAGE)                                                                AVG,
+       round(MAXVAL)                                                                 MAX 
+from   DBA_HIST_SYSMETRIC_SUMMARY 
+where  GROUP_ID = 2 and METRIC_ID = 2135 -- Current OS Load
+  and  DBID            = (select DBID from V$DATABASE)
+  and  INSTANCE_NUMBER = 1
+  and  SNAP_ID         >= (select SNAP_ID from START_SNAP)
+)
+order by END_TIME     desc,
+         METRIC_NAME  asc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Wait events of active sessions
+select SID,
+       Nvl(USERNAME, PROGRAM)             USERNAME,
+       Nvl2(USERNAME, LAST_CALL_ET, NULL) ACTIVE_DURATION_SEC,
+       EVENT                              WAIT_EVENT,
+       SECONDS_IN_WAIT       
+from   GV$SESSION 
+where  STATUS = 'ACTIVE'
+  and  WAIT_CLASS <> 'Idle'
+
+
+
+
+
+
+
+
+-- Top Wait Events during the last minute.
+select M.INST_ID,
+       M.BEGIN_TIME,
+       M.END_TIME,
+       N.NAME,
+       N.WAIT_CLASS,
+       M.NUM_SESS_WAITING WAITERS,
+       M.TIME_WAITED/100 TIME_WAITED_SEC,
+       M.WAIT_COUNT,
+       Trunc((M.TIME_WAITED*10)/M.WAIT_COUNT, 2) AVG_TIME_MS
+from   GV$EVENTMETRIC M,
+       GV$EVENT_NAME  N
+where  M.INST_ID  = N.INST_ID
+  and  M.EVENT_ID = N.EVENT_ID
+  and WAIT_CLASS not in ('Idle')
+  and WAIT_COUNT > 0
+order by M.INST_ID asc,
+         M.TIME_WAITED desc
