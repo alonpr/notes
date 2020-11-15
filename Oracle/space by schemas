@@ -1,0 +1,4 @@
+select OWNER, trunc(SUM(BYTES)/(1024*1024*1024),1) SIZE_GB
+from   DBA_SEGMENTS
+group by OWNER
+order by 2 desc
