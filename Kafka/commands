@@ -1,0 +1,20 @@
+# start zookeeper
+zookeeper-server-start /usr/local/etc/kafka/zookeeper.properties
+
+# start kafka
+kafka-server-start /usr/local/etc/kafka/server.properties
+
+# create topic
+kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic topic1
+
+# list topics
+kafka-topics --list --bootstrap-server localhost:9092
+
+# command line producer
+kafka-console-producer --broker-list localhost:9092 --topic topic1
+
+# command line consumer
+kafka-console-consumer --bootstrap-server localhost:9092 --topic topic1 --from-beginning
+
+# jmx
+/bin/kafka/kafka-run-class.sh kafka.tools.JmxTool --object-name 'kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec'
