@@ -1,0 +1,5 @@
+/kafka/bin/kafka-topics.sh --describe --zookeeper zookeeper 192.168.30.40:2181/zoo | cut -f 4 | grep 1 | wc -l
+
+cat /kafka/config/server.properties | grep zookeeper.connect=
+
+/kafka/bin/kafka-preferred-replica-election.sh --zookeeper 192.168.30.40:2181/zoo
