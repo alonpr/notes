@@ -1,0 +1,3 @@
+ssh -N -L localport:dbserver:dbport yourname@connectionserver
+  --> traiana@luminatebastion@luminatebastion.traianaops.luminatesec.com
+  --> connect to "localhost:localport"
