@@ -1,0 +1,6 @@
+select tablespace_name,
+       round(bytes/1024/1024/1024) size_gb,
+       nvl(round(((select sum(bytes) from dba_segments where tablespace_name=d.tablespace_name)/bytes)*100),0) "USED_%", 
+       round(((bytes) - (select sum(bytes) from dba_segments where tablespace_name=d.tablespace_name))/1024/1024) free_mb
+from   dba_data_files d
+order by 4 asc;
