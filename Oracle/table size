@@ -1,0 +1,16 @@
+with TABLE_NAME  as (select 'MSG_QUEUE_OUT' TABLE_NAME from DUAL),
+     SCHEMA_NAME as (select 'HR4_PROD' SCHEMA_NAME from DUAL)
+select 'Table: ' || Round(Sum(BYTES)/1024/1024/1024) SIZE_GB 
+from   DBA_SEGMENTS
+where  SEGMENT_NAME = (select TABLE_NAME from TABLE_NAME)
+  and  OWNER = (select SCHEMA_NAME from SCHEMA_NAME)
+union all
+select 'Indexes: ' || Round(Sum(BYTES)/1024/1024/1024) SIZE_GB 
+from   DBA_SEGMENTS
+where  SEGMENT_NAME in (select INDEX_NAME from DBA_INDEXES where TABLE_NAME = (select TABLE_NAME from TABLE_NAME) and OWNER = (select SCHEMA_NAME from SCHEMA_NAME))
+  and  OWNER = (select SCHEMA_NAME from SCHEMA_NAME)
+union all
+select 'Lobs: ' || Round(Sum(BYTES)/1024/1024/1024) SIZE_GB 
+from   DBA_SEGMENTS
+where  SEGMENT_NAME in (select SEGMENT_NAME from DBA_LOBS where TABLE_NAME = (select TABLE_NAME from TABLE_NAME) and OWNER = (select SCHEMA_NAME from SCHEMA_NAME))
+  and  OWNER = (select SCHEMA_NAME from SCHEMA_NAME);
