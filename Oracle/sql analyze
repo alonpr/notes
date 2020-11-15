@@ -1,0 +1,165 @@
+-- ======================================================================
+-- SQL INFO
+-- ======================================================================
+select SQL_ID,
+       EXECUTIONS,
+       USERS_EXECUTING,
+       Round((ELAPSED_TIME / EXECUTIONS / 1000000), 4) AVG_SECS_PER_EXEC,
+       Round((BUFFER_GETS / EXECUTIONS))               AVG_GETS_PER_EXEC,
+       Round((DISK_READS / EXECUTIONS))                AVG_READS_PER_EXEC,
+       Round((ROWS_PROCESSED / EXECUTIONS))            AVG_ROWS_PER_EXEC,
+       LAST_ACTIVE_TIME,
+       LAST_LOAD_TIME,
+       PLAN_HASH_VALUE,
+       OPTIMIZER_COST,
+       PARSING_SCHEMA_NAME,
+       SQL_FULLTEXT
+from  V$SQL 
+where SQL_ID = 'fwqa8vhxw672x';
+-- ======================================================================
+-- SQL INFO
+-- ======================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+-- ======================================================================
+-- SQL TRACE
+-- ======================================================================
+EXEC DBMS_MONITOR.session_trace_enable(waits=>TRUE, binds=>TRUE);
+EXEC DBMS_MONITOR.session_trace_disable;
+--
+EXEC DBMS_MONITOR.session_trace_enable(session_id =>1234, serial_num=>1234, waits=>TRUE, binds=>TRUE);
+EXEC DBMS_MONITOR.session_trace_disable(session_id=>1234, serial_num=>1234);
+
+
+
+ALTER SESSION SET TRACEFILE_IDENTIFIER = "MY_TEST_SESSION";
+--
+select * from V$PROCESS
+--
+SELECT value
+FROM   v$diag_info
+WHERE  name = 'Default Trace File';
+-- ======================================================================
+-- SQL TRACE
+-- ======================================================================
+
+
+
+
+
+
+
+
+
+select /*+ gather_plan_statistics */ ... from ... ;   
+--- OR ---   
+alter session set statistics_level='ALL';
+
+
+
+
+-- From AWR By SQL_ID
+select * from table (DBMS_XPLAN.DISPLAY_AWR(/* sql_id          */ 'XXXXXXXXXXXXX',
+                                            /* plan_hash_value */ null,
+                                            /* db_id           */ null,
+                                            /* format          */ 'ADVANCED IOSTATS -PROJECTION -ALIAS LAST'));
+
+-- From Library Cache By SQL_ID
+select * from table (DBMS_XPLAN.DISPLAY_CURSOR(/* sql_id          */ 'XXXXXXXXXXXXX',
+                                               /* child_number */ null,
+                                               /* format          */ 'ADVANCED IOSTATS -PROJECTION -ALIAS LAST'));
+
+											
+-- Last SQL
+select * from table (DBMS_XPLAN.DISPLAY_CURSOR(/* sql_id       */ null,
+                                               /* child_number */ null,
+                                               /* format       */ 'ADVANCED IOSTATS -PROJECTION -ALIAS LAST'));
+
+-- Finding the peeked binds of the cursor
+select OTHER_XML
+from   V$SQL_PLAN / DBA_HIST_SQL_PLAN
+where  SQL_ID              = 'XXXXXXXXXXXX'
+       and PLAN_HASH_VALUE = XXXXXXXXXXXX
+
+Save the output as XML and open it.
+
+Convert "peeked_binds" data: 
+	if l_dty = 1 and l_frm = '1' then -- varchar2 
+           dbms_stats.convert_raw_value (IN <value from XML>,OUT);
+        elsif l_dty = 1 and l_frm = '2' then -- nvarchar2 
+           dbms_stats.convert_raw_value_nvarchar (IN, OUT);
+        elsif l_dty = 2 then -- number
+           dbms_stats.convert_raw_value (IN, OUT);
+        elsif l_dty = 12 then -- date
+           dbms_stats.convert_raw_value (IN, OUT);
+        elsif l_dty = 23 then -- raw
+           <already raw...>  
+        elsif l_dty = 69  then -- rowid (not fully tested)
+           dbms_stats.convert_raw_value_rowid (IN, OUT);
+        elsif l_dty = 96 and l_frm = '1' then -- char 
+           dbms_stats.convert_raw_value (IN, OUT);
+        elsif l_dty = 96 and l_frm = '2' then -- nchar 
+           dbms_stats.convert_raw_value_nvarchar (IN, OUT);
+        end if;
+		
+		
+-- Watch raw values
+declare
+  i number;
+begin
+  dbms_stats.convert_raw_value ('C102', i);
+  dbms_output.put_line(i);
+end;
+/
+
+
+-- What is being read
+select DBMS_SQLTUNE.REPORT_SQL_MONITOR(sql_id => '3x5xptq42p3w4') from dual;
+
+
+
+-- purge cursor
+declare
+   param varchar2(120);
+begin
+   select address||','||hash_value
+   into   param
+   from   v$sqlarea
+   where  sql_id='39xtsg5yhycay';
+
+   sys.dbms_shared_pool.purge(param,'C');
+end;
+/
+
+
+
+-- ======================================================================
+-- OPTIMIZER TRACE
+-- ======================================================================
+-- for sql
+alter session set tracefile_identifier='MY_10053';  -- !! change !!
+alter session set events '10053 trace name context forever';
+select /* hard parse comment */ * from emp where ename = 'SCOTT';  -- !! change !!
+alter session set events '10053 trace name context off';
+
+-- for sql_id
+begin
+    dbms_sqldiag.dump_trace(p_sql_id=>'6yf5xywktqsa7',  -- !! change !!
+                            p_child_number=>0,  -- !! change !!
+                            p_component=>'Compiler',  -- or 'Optimizer'
+                            p_file_id=>'MY_TRACE_DUMP');  -- !! change !!
+end;
+/
+-- ======================================================================
+-- OPTIMIZER TRACE
+-- ======================================================================
