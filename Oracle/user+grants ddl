@@ -1,0 +1,28 @@
+SELECT DBMS_METADATA.GET_DDL('USER', 'DBA_APPS') FROM dual;
+
+SELECT DBMS_METADATA.GET_GRANTED_DDL('ROLE_GRANT', 'DBA_APPS') FROM dual;
+
+SELECT DBMS_METADATA.GET_GRANTED_DDL('SYSTEM_GRANT', 'DBA_APPS') FROM dual;
+
+SELECT DBMS_METADATA.GET_GRANTED_DDL('OBJECT_GRANT','DBA_APPS') FROM dual;
+
+-------
+
+with username as (select upper('<SCHEMA NAME>') value from dual)
+select 'create user ' || (select value from username) || ' identified by values '
+|| (select ''''||spare4||';'||password||'''' from sys.user$ where name = (select value from username)) ||
+' default tablespace ' || (select default_tablespace from dba_users where username = (select value from username)) ||
+' temporary tablespace ' || (select temporary_tablespace from dba_users where username = (select value from username)) || ';' script
+from dual
+union all
+select 'grant ' || granted_role || ' to ' || grantee || decode(admin_option,'YES',' with admin option') || ';'
+from dba_role_privs
+where grantee = (select value from username)
+union all
+select 'grant ' || privilege || ' to ' || grantee || decode(admin_option,'YES',' with admin option') || ';'
+from dba_sys_privs
+where grantee = (select value from username)
+union all
+select 'grant ' || privilege || ' on ' || owner || '.' || table_name || ' to ' || grantee || decode(grantable,'YES',' with grant option') || ';'
+from dba_tab_privs
+where grantee = (select value from username) and owner in ('SYS','DBA_APPS')
