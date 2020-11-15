@@ -1,0 +1,4 @@
+select * from DBA_DATAPUMP_JOBS;
+
+impdp/expdp  / attach=[job_name]
+  > KILL_JOB
