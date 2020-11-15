@@ -1,0 +1,60 @@
+BEGIN
+  DBMS_WORKLOAD_REPOSITORY.CREATE_SNAPSHOT ();
+END;
+/
+
+
+
+
+EXECUTE DBMS_WORKLOAD_REPOSITORY.MODIFY_SNAPSHOT_SETTINGS(interval  =>  30,retention =>  20160);
+
+select * from dba_hist_wr_control;
+
+
+
+
+@%ORACLE_HOME%/rdbms/admin/awrrpt.sql
+
+-- SQL
+@%ORACLE_HOME%/rdbms/admin/awrsqrpt.sql
+
+-- Compare
+@%ORACLE_HOME%/rdbms/admin/awrddrpt.sql
+
+
+
+
+exec DBMS_WORKLOAD_REPOSITORY.DROP_SNAPSHOT_RANGE(0,999999);
+
+
+
+
+-- Snapshots list
+select * from 
+(
+select To_Char(STARTUP_TIME, 'DD-MON-YYYY HH24:MI:SS') STARTUP_TIME,
+       To_Char(END_INTERVAL_TIME, 'DD-MON-YYYY')       SNAPSHOT_DATE,
+       To_Char(END_INTERVAL_TIME, 'DY')                SNAPSHOT_DAY,
+       To_Char(END_INTERVAL_TIME, 'HH24:MI')           SNAPSHOT_TIME,
+                                                       SNAP_ID
+from   DBA_HIST_SNAPSHOT
+order by END_INTERVAL_TIME desc
+)
+
+
+-------------------------------
+
+
+select Trunc(BEGIN_INTERVAL_TIME, 'MI')              BEGIN_INTERVAL,
+       Trunc(END_INTERVAL_TIME, 'MI')                END_INTERVAL,
+       EVENT.TOTAL_WAITS - PREV_EVENT.TOTAL_WAITS    TOTAL_WAITS,
+       round( (EVENT.TIME_WAITED_MICRO-PREV_EVENT.TIME_WAITED_MICRO) / (EVENT.TOTAL_WAITS-PREV_EVENT.TOTAL_WAITS) / 1000) WAITED_MS 
+from   DBA_HIST_SYSTEM_EVENT EVENT,
+       DBA_HIST_SYSTEM_EVENT PREV_EVENT,
+       DBA_HIST_SNAPSHOT     SNAP
+where  SNAP.SNAP_ID between 92110 and 92175
+  and  EVENT.EVENT_NAME like 'log file sync'
+  and  EVENT.SNAP_ID = SNAP.SNAP_ID
+  and  PREV_EVENT.SNAP_ID = SNAP.SNAP_ID - 1
+  and  PREV_EVENT.EVENT_NAME like 'log file sync'
+order by 2 desc
