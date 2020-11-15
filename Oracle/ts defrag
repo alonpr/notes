@@ -1,0 +1,53 @@
+-- Checks maximum shrink that could be made to datafiles
+
+select file_name,
+       ceil( (nvl(hwm,1)*8192)/1024/1024 ) smallest,
+       ceil( blocks*8192/1024/1024) currsize,
+       ceil( blocks*8192/1024/1024) -
+       ceil( (nvl(hwm,1)*8192)/1024/1024 ) savings
+from dba_data_files a,
+     ( select file_id, max(block_id+blocks-1) hwm
+         from dba_extents
+        group by file_id ) b
+where a.file_id = b.file_id(+)
+order by file_name;
+
+---------------------------------------------------------------
+
+-- Finds segments that are located in the end of the file
+
+select                               D.OWNER, 
+                                     D.SEGMENT_NAME, 
+                                     D.SEGMENT_TYPE, 
+                                     D.TABLESPACE_NAME,  
+       V.NAME                        DATAFILE, 
+       trunc(V.BYTES/1024/1024/1024) FILE_SIZE_GB,
+       trunc(S.BYTES/1024/1024)      SEGMENT_SIZE_MB
+from   DBA_EXTENTS  D,
+       V$DATAFILE   V,
+       DBA_SEGMENTS S
+where  V.FILE#            = D.FILE_ID
+       and D.OWNER        = S.OWNER
+       and D.SEGMENT_NAME = S.SEGMENT_NAME
+order by BLOCK_ID desc;
+
+
+--------------------------------------------------------------
+
+alter table [TABLE_NAME] move;     
+-- Requires rebuilding all the indexes of the table !!!
+
+
+alter index [INDEX_NAME] rebuild;
+
+
+-- In case of LOB segments (alter table move - doesn't move LOB segments)
+select OWNER_NAME, TABLE_NAME, COLUMN_NAME, TABLESPACE_NAME 
+from ALL_LOBS where segment_name like 'XXXXXXXXXXXXXXXXXXXXX'
+
+ALTER TABLE [TABLE_NAME]
+    MOVE LOB([column_name]) STORE AS (
+        TABLESPACE [ts_name]
+    )
+--------------------------------------------------------------
+
