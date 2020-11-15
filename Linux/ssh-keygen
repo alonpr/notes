@@ -1,1 +1,4 @@
 ssh-keygen -R 192.168.219.161
+
+ssh-keygen
+ssh-copy-id userid@hostname
