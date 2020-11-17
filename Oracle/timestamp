@@ -1,0 +1,13 @@
+select client_instance_id,
+       ADDRESS_ID,
+       CHANNEL_ID,
+       Avg(Extract(DAY      from COMPLETION_TIME - CLIENT_CAPTURE_TIME) * 86400 
+       + Extract(HOUR   from COMPLETION_TIME - CLIENT_CAPTURE_TIME) * 3600 
+       + Extract(MINUTE from COMPLETION_TIME - CLIENT_CAPTURE_TIME) * 60 
+       + Extract(SECOND from COMPLETION_TIME - CLIENT_CAPTURE_TIME)) AVG_INTERVAL,
+       COUNT(*),
+from   MSG_QUEUE_IN
+group by client_instance_id,
+         ADDRESS_ID,
+         CHANNEL_ID;
+         
