@@ -1,0 +1,41 @@
+select * from v$archive_dest_status;
+
+select NEXT_TIME,
+       COMPLETION_TIME,
+       NAME,
+       SEQUENCE#,
+       CREATOR,
+       FAL,
+       ARCHIVED,
+       APPLIED,
+       DELETED 
+from   V$ARCHIVED_LOG 
+where  DEST_ID in (1,2) -- CHANGE
+order by SEQUENCE# desc,
+         DEST_ID asc;
+         
+-- Applied hours delay
+select Round((SYSDATE - Max(NEXT_TIME)) * 24) HOURS_DELAY
+from   V$ARCHIVED_LOG
+where  DEST_ID = 4 -- CHANGE 
+  and  APPLIED = 'YES';
+
+-- Checking SE recovery
+select   SEQUENCE#,
+         FIRST_TIME
+from     V$LOG_HISTORY
+order by FIRST_TIME asc;
+
+select   Round((SYSDATE - Max(FIRST_TIME)) * 24) HOURS_DELAY
+from     V$LOG_HISTORY;
+
+startup mount;
+
+
+
+		 
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+alter database recover managed standby database  disconnect from session;
+		 
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT;		 
