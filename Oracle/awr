@@ -13,13 +13,13 @@ select * from dba_hist_wr_control;
 
 
 
-@%ORACLE_HOME%/rdbms/admin/awrrpt.sql
+@$ORACLE_HOME/rdbms/admin/awrrpt.sql
 
 -- SQL
-@%ORACLE_HOME%/rdbms/admin/awrsqrpt.sql
+@$ORACLE_HOME/rdbms/admin/awrsqrpt.sql
 
 -- Compare
-@%ORACLE_HOME%/rdbms/admin/awrddrpt.sql
+@$ORACLE_HOME/rdbms/admin/awrddrpt.sql
 
 
 
