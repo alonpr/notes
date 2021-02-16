@@ -58,3 +58,13 @@ where  SNAP.SNAP_ID between 92110 and 92175
   and  PREV_EVENT.SNAP_ID = SNAP.SNAP_ID - 1
   and  PREV_EVENT.EVENT_NAME like 'log file sync'
 order by 2 desc
+
+
+
+
+*************************************************************
+************************* STATSPACK *************************
+*************************************************************
+
+sqlplus perfstat/perfstat
+@?/rdbms/admin/spreport
