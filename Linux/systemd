@@ -1,0 +1,41 @@
+sudo systemctl start application.service
+
+sudo systemctl stop application.service
+
+sudo systemctl restart application.service
+
+# reloads configuration files without restarting, if the service is able to do that. if not sure then can use reload-or-restart".
+sudo systemctl reload application.service
+
+sudo systemctl is-active application.service
+
+sudo systemctl status application.service
+
+---
+
+# start at boot (does not start in the current session, need to issue a separate "start" for that)
+sudo systemctl enable application.service
+
+# will remove the symbolic link that indicated that the service should be started automatically
+sudo systemctl disable application.service
+
+sudo systemctl is-enabled application.service
+
+sudo systemctl is-failed application.service
+
+---
+
+# lists active units. optional flags: --all / --all --state=inactive / --type=service
+sudo systemctl list-units
+
+systemctl list-unit-files
+
+---
+
+# displays unit file
+sudo systemctl cat atd.service
+
+systemctl list-dependencies sshd.service
+
+# shows low level properties
+sudo systemctl show sshd.service
